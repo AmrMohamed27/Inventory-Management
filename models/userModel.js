@@ -13,6 +13,12 @@ const userSchema = new Schema({
   email: { type: String, required: true },
   password: { type: String, required: true },
   phone: { type: String },
+  cart: [
+    {
+      itemId: { type: Schema.Types.ObjectId, ref: "Item" },
+      quantity: { type: Number, default: 1 },
+    },
+  ],
   city: {
     type: String,
     enum: [
@@ -49,7 +55,26 @@ userSchema.virtual("name").get(function () {
 
   return fullName;
 });
-
+// Method to add an item to cart
+userSchema.methods.addToCart = function (itemId, quantity = 1) {
+  const existingItemIndex = this.cart.findIndex(
+    (item) => item.itemId.toString() === itemId.toString()
+  );
+  if (existingItemIndex !== -1) {
+    this.cart[existingItemIndex].quantity += quantity;
+  } else {
+    this.cart.push({ itemId, quantity });
+  }
+  return this.save();
+};
+// Method to remove an item from cart
+userSchema.methods.removeFromCart = function (itemId) {
+  this.cart = this.cart.filter(
+    (item) => item.itemId.toString() !== itemId.toString()
+  );
+  return this.save();
+};
+// Virtual to get url of a user
 userSchema.virtual("url").get(function () {
   // We don't use an arrow function as we'll need the this object
   return `/users/${this._id}`;
